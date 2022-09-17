@@ -7,11 +7,7 @@ import requests
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 
-from vars import (
-    RETRY_TIME,
-    ENDPOINT,
-    HOMEWORK_STATUSES
-)
+from exception import ResponsePracticumException
 
 load_dotenv()
 
@@ -20,6 +16,25 @@ secret_token = os.getenv('TOKEN')
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
+RETRY_TIME = 600
+ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+
+HOMEWORK_STATUSES = {
+    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
+    'reviewing': 'Работа взята на проверку ревьюером.',
+    'rejected': 'Работа проверена: у ревьюера есть замечания.'
+}
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(__file__ + '.log', encoding='UTF-8')],
+    format=(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    ))
 
 
 def send_message(bot, message):
@@ -42,11 +57,16 @@ def get_api_answer(current_timestamp):
         response = requests.get(url=url, params=params, headers=headers)
     except RequestException as error:
         logging.error(f'Ошибка URL {error}')
-        raise ConnectionError(
+        error_message = (
             'Ошибка подключения к API: {error}\n {url}\n {headers}\n {params}'
             .format(error=error, url=url, params=params, headers=headers))
+        raise ResponsePracticumException(error_message)
     except Exception as error:
         print(error)
+
+    if response.status_code != 200:
+        error_message = f"Ошибка, Код ответа: {response.status_code}"
+        raise ResponsePracticumException(error_message)
 
     return response.json()
 
@@ -63,12 +83,12 @@ def check_response(response):
     if 'homeworks' not in response:
         error_message = 'Ключ homeworks отсутствует'
         logging.error(error_message)
-        raise KeyError(error_message)
+        raise ResponsePracticumException(error_message)
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         error_message = 'homeworks не является списком'
         logging.error(error_message)
-        raise TypeError(error_message)
+        raise ResponsePracticumException(error_message)
     if len(homeworks) == 0:
         error_message = 'Пустой список домашних работ'
         logging.error(error_message)
@@ -133,13 +153,5 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.DEBUG,
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(__file__ + '.log', encoding='UTF-8')],
-        format=(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
     logging.info('START START START')
     main()
