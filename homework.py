@@ -44,7 +44,7 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except Exception as error:
         error_message = f'Сообщение не отправлено {error}'
-        raise Exception(error_message)
+        raise telegram.error.TelegramError(error_message)
 
 
 def get_api_answer(current_timestamp):
@@ -61,9 +61,6 @@ def get_api_answer(current_timestamp):
             'Ошибка подключения к API: {error}\n {url}\n {headers}\n {params}'
             .format(error=error, url=url, params=params, headers=headers))
         raise ResponsePracticumException(error_message)
-    except Exception as error:
-        error_message = f'Сообщение не отправлено {error}'
-        raise Exception(error_message)
 
     if response.status_code != HTTPStatus.OK:
         error_message = f'Ошибка, Код ответа: {response.status_code}'
@@ -128,7 +125,7 @@ def main():
         raise Exception(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    message_status = ''
+    last_message = ''
 
     while True:
         try:
@@ -137,13 +134,16 @@ def main():
                 homework = check_response(response)
                 logging.info('Есть новости')
                 message = parse_status(homework)
-                if message != message_status:
+                if message != last_message:
                     send_message(bot, message)
                     logging.info('Сообщение отправлено')
-                    message_status = message
+                    last_message = message
             current_timestamp = response.get('current_date')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
+            if message != last_message:
+                send_message(bot, message)
+                last_message = message
             logging.error(message)
         finally:
             logging.info(f'Sleeping for {RETRY_TIME} seconds...')
