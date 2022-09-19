@@ -1,7 +1,6 @@
 # Бот-ассистент
 [![Python](https://img.shields.io/badge/Made%20with-Python-green?logo=python&logoColor=white&color)](https://www.python.org/)
 [![Telegram](https://img.shields.io/static/v1?message=bot&logo=telegram&labelColor=5c5c5c&color=1182c3&logoColor=white&label=%20&style=plastic)](https://core.telegram.org/bots/api)
-[![Pyrogram](https://img.shields.io/static/v1?message=pyrogram&logo=github&labelColor=5c5c5c&color=1182c3&logoColor=white&label=%20&style=plastic)](https://github.com/pyrogram/pyrogram)
 
 
 ## О проекте:
